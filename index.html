@@ -14,6 +14,8 @@
       --accent-light: #f7ede2;
       --text: #2b2b2b;
       --border: #e2d7cd;
+      --danger: #d32f2f;
+      --danger-bg: #ffebee;
     }
 
     * {
@@ -93,11 +95,35 @@
       background-color: #fff8e1;
       border: 1px solid #ffe082;
       color: #856404;
-      padding: 10px 14px;
+      padding: 12px 14px;
       border-radius: 10px;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       margin-bottom: 18px;
-      line-height: 1.4;
+      line-height: 1.5;
+    }
+
+    .deadline-badge {
+      display: inline-block;
+      background-color: #d32f2f;
+      color: #ffffff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+    }
+
+    .closed-banner {
+      display: none;
+      background-color: var(--danger-bg);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 18px;
     }
 
     .form-group {
@@ -230,8 +256,8 @@
     }
 
     .submit-btn:disabled {
-      background: #ccc;
-      cursor: not-allowed;
+      background: #ccc !important;
+      cursor: not-allowed !important;
     }
   </style>
 </head>
@@ -246,7 +272,13 @@
   </div>
 
   <form id="orderForm">
+    <!-- 마감 완료 안내 배너 -->
+    <div id="closedBanner" class="closed-banner">
+      🚫 사전 주문이 마감되었습니다. (마감: 10월 2일)
+    </div>
+
     <div class="notice-box">
+      <span class="deadline-badge">⏰ 주문 마감일</span> <strong>2026년 10월 2일(금) 23:59까지</strong><br>
       💡 <strong>주문 수정 안내</strong><br>
       동일한 학교로 재제출 시 <strong>기존에 입력된 주문 내역은 삭제되고 새로 선택한 주문으로 덮어씌워집니다.</strong>
     </div>
@@ -447,8 +479,31 @@
 </div>
 
 <script>
-  // 업데이트된 구글 앱스 스크립트 배포 URL
   const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAIR-HgDpBD-Jh4hadL2o3Wp8FR4QGmVvFZPOyWIBqyHTrsYMDd6VPgGOO4Mg4zH2dVw/exec";
+  
+  // 마감 기한 설정: 2026년 10월 2일 23시 59분 59초
+  const DEADLINE = new Date("2026-10-02T23:59:59");
+
+  // 마감 상태 체크 함수
+  function checkDeadline() {
+    const now = new Date();
+    if (now > DEADLINE) {
+      document.getElementById('closedBanner').style.display = 'block';
+      
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = "사전 주문이 마감되었습니다";
+
+      document.getElementById('school').disabled = true;
+      document.querySelectorAll('.menu-check').forEach(chk => chk.disabled = true);
+      document.querySelectorAll('.count-select').forEach(sel => sel.disabled = true);
+      return true;
+    }
+    return false;
+  }
+
+  // 페이지 로드 시 마감 여부 체크
+  checkDeadline();
 
   // 체크박스 클릭 시 잔 수 선택 활성화/비활성화
   document.querySelectorAll('.menu-check').forEach(chk => {
@@ -469,6 +524,11 @@
   // 폼 제출 이벤트 처리
   document.getElementById('orderForm').addEventListener('submit', function(e) {
     e.preventDefault();
+
+    if (checkDeadline()) {
+      alert("주문 마감 기한(10월 2일)이 지나 더 이상 제출할 수 없습니다.");
+      return;
+    }
     
     const school = document.getElementById('school').value;
     const items = [];
@@ -521,8 +581,10 @@
       console.error(err);
     })
     .finally(() => {
-      btn.disabled = false;
-      btn.innerText = "사전 주문 제출하기";
+      if (!checkDeadline()) {
+        btn.disabled = false;
+        btn.innerText = "사전 주문 제출하기";
+      }
     });
   });
 </script>
